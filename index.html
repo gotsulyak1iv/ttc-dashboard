@@ -282,25 +282,24 @@ async function loadData(){
     ws.value=DATA.length-1;render();
   }catch(e){
     document.getElementById('statusBar').innerHTML='⚠ Тестовые данные';
-    DATA=[{week:'01.06.2026',
-      products:[
-        {name:'Омега-3 120',plan_qty:20,plan_rub:35160,fact_qty:14,fact_rub:24612},
-        {name:'Омега-3 220',plan_qty:25,plan_rub:54875,fact_qty:18,fact_rub:39510},
-        {name:'Витамин D3',plan_qty:20,plan_rub:29000,fact_qty:5,fact_rub:7250},
-        {name:'Магний цитрат',plan_qty:30,plan_rub:64050,fact_qty:22,fact_rub:46970},
-        {name:'Метаб. средство',plan_qty:35,plan_rub:92505,fact_qty:8,fact_rub:21160},
-        {name:'Индол',plan_qty:15,plan_rub:29520,fact_qty:12,fact_rub:23616}
-      ],
-      traffic:[
-        {platform:'VK',project:'ТТС',product:'Омега-3 120',clicks:120,orders:8,sold:8},
-        {platform:'VK',project:'НП',product:'Омега-3 120',clicks:80,orders:6,sold:6},
-        {platform:'Instagram',project:'ТТС',product:'Омега-3 220',clicks:200,orders:14,sold:14},
-        {platform:'Telegram',project:'СЗ',product:'Магний цитрат',clicks:150,orders:18,sold:18},
-        {platform:'VK',project:'ТТС',product:'Витамин D3',clicks:60,orders:4,sold:4},
-        {platform:'Instagram',project:'СЗ',product:'Индол',clicks:90,orders:10,sold:10},
-        {platform:'Telegram',project:'ТТС',product:'Метаб. средство',clicks:70,orders:6,sold:6},
-      ]
-    }];
+    DATA=[
+      {week:'31.05.2026',products:[
+        {name:'Омега-3 120',plan_qty:20,plan_rub:35160,fact_qty:0,fact_rub:0},
+        {name:'Омега-3 220',plan_qty:25,plan_rub:54875,fact_qty:0,fact_rub:0},
+        {name:'Витамин D3',plan_qty:20,plan_rub:29000,fact_qty:0,fact_rub:0},
+        {name:'Магний цитрат',plan_qty:30,plan_rub:64050,fact_qty:0,fact_rub:0},
+        {name:'Метаб. средство',plan_qty:35,plan_rub:92505,fact_qty:0,fact_rub:0},
+        {name:'Индол',plan_qty:15,plan_rub:29520,fact_qty:0,fact_rub:0}
+      ],traffic:[]},
+      {week:'07.06.2026',products:[
+        {name:'Омега-3 120',plan_qty:20,plan_rub:35160,fact_qty:0,fact_rub:0},
+        {name:'Омега-3 220',plan_qty:25,plan_rub:54875,fact_qty:0,fact_rub:0},
+        {name:'Витамин D3',plan_qty:20,plan_rub:29000,fact_qty:0,fact_rub:0},
+        {name:'Магний цитрат',plan_qty:30,plan_rub:64050,fact_qty:0,fact_rub:0},
+        {name:'Метаб. средство',plan_qty:35,plan_rub:92505,fact_qty:0,fact_rub:0},
+        {name:'Индол',plan_qty:15,plan_rub:29520,fact_qty:0,fact_rub:0}
+      ],traffic:[]}
+    ];
     document.getElementById('weekSel').innerHTML=`<option value="0">${DATA[0].week}</option>`;
     render();
   }
