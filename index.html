@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time to Care — Дашборд продаж</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060612;
+    --card: rgba(255,255,255,0.05);
+    --border: rgba(255,255,255,0.1);
+    --purple: #a78bfa;
+    --green: #4ade80;
+    --red: #f87171;
+    --amber: #fbbf24;
+    --blue: #60a5fa;
+    --pink: #f472b6;
+    --orange: #fb923c;
+    --teal: #34d399;
+    --text: #e0e0ff;
+    --muted: #6060a0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  /* Stars */
+  .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .star { position: absolute; border-radius: 50%; background: #fff; animation: twinkle var(--d) infinite var(--del); }
+  @keyframes twinkle { 0%,100%{opacity:var(--op)} 50%{opacity:0.05} }
+
+  .wrap { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+  /* Header */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(120,80,255,0.1);
+    border: 0.5px solid rgba(167,139,250,0.25);
+    border-radius: 16px; padding: 14px 22px; margin-bottom: 18px;
+    backdrop-filter: blur(10px);
+  }
+  .logo { font-family: 'Unbounded', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 2px; color: #fff; }
+  .logo span { color: var(--purple); }
+  .badge { font-size: 11px; background: rgba(167,139,250,0.15); border: 0.5px solid rgba(167,139,250,0.3); color: var(--purple); padding: 3px 12px; border-radius: 20px; margin-left: 10px; }
+  .controls { display: flex; gap: 12px; align-items: center; }
+  .controls label { font-size: 11px; color: var(--muted); }
+  .controls select {
+    background: rgba(255,255,255,0.07); color: var(--text);
+    border: 0.5px solid rgba(255,255,255,0.15); border-radius: 8px;
+    padding: 5px 12px; font-size: 12px; cursor: pointer; font-family: 'Inter', sans-serif;
+  }
+  .status-bar { text-align: center; font-size: 11px; color: var(--muted); margin-bottom: 14px; }
+  .status-bar span { color: var(--purple); }
+
+  /* KPI row */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+  .kpi {
+    background: var(--card); border: 0.5px solid var(--border);
+    border-radius: 14px; padding: 16px;
+    animation: fadeUp 0.5s ease forwards; opacity: 0;
+    transition: transform 0.2s;
+  }
+  .kpi:hover { transform: translateY(-3px); }
+  .kpi:nth-child(1){animation-delay:0.05s} .kpi:nth-child(2){animation-delay:0.1s}
+  .kpi:nth-child(3){animation-delay:0.15s} .kpi:nth-child(4){animation-delay:0.2s}
+  @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  .kpi-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+  .kpi-value { font-family: 'Unbounded', sans-serif; font-size: 22px; font-weight: 500; color: #fff; }
+  .kpi-sub { font-size: 11px; margin-top: 5px; color: var(--muted); }
+  .pos { color: var(--green) !important; }
+  .neg { color: var(--red) !important; }
+  .warn { color: var(--amber) !important; }
+
+  /* Speedo row */
+  .speedo-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+  .speedo-card {
+    background: var(--card); border: 0.5px solid var(--border);
+    border-radius: 14px; padding: 18px; text-align: center;
+    animation: fadeUp 0.5s ease forwards 0.25s; opacity: 0;
+  }
+  .speedo-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
+  .speedo-wrap { position: relative; height: 130px; max-width: 260px; margin: 0 auto; }
+  .speedo-center { position: absolute; bottom: 0; left: 0; right: 0; text-align: center; }
+  .speedo-pct { font-family: 'Unbounded', sans-serif; font-size: 30px; font-weight: 700; }
+  .speedo-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* Bottles */
+  .section-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
+  .bottles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+  .bottle {
+    background: var(--card); border: 0.5px solid var(--border);
+    border-radius: 14px; padding: 14px; text-align: center;
+    animation: float var(--fd) ease-in-out infinite var(--fdel);
+    transition: transform 0.2s;
+  }
+  .bottle:hover { transform: scale(1.03); }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  .bottle-name { font-size: 11px; color: var(--muted); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bottle-pct { font-family: 'Unbounded', sans-serif; font-size: 20px; font-weight: 500; margin: 6px 0; }
+  .bottle-stats { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-top: 6px; }
+  .bottle-delta { font-size: 10px; margin-top: 4px; }
+
+  /* Channels */
+  .channels-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 18px; }
+  .ch-card {
+    background: var(--card); border: 0.5px solid var(--border);
+    border-radius: 12px; padding: 12px; text-align: center;
+    transition: transform 0.2s;
+  }
+  .ch-card:hover { transform: translateY(-3px); }
+  .ch-icon { font-size: 16px; font-weight: 700; margin-bottom: 4px; font-family: 'Unbounded', sans-serif; }
+  .ch-name { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+  .ch-val { font-family: 'Unbounded', sans-serif; font-size: 15px; font-weight: 500; }
+  .ch-pct { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* Bar chart */
+  .chart-card {
+    background: var(--card); border: 0.5px solid var(--border);
+    border-radius: 14px; padding: 18px; margin-bottom: 18px;
+    animation: fadeUp 0.5s ease forwards 0.3s; opacity: 0;
+  }
+
+  /* Recommendation */
+  .rec {
+    background: rgba(167,139,250,0.08); border: 0.5px solid rgba(167,139,250,0.2);
+    border-radius: 12px; padding: 14px 18px; font-size: 13px; color: #c4b5fd; line-height: 1.7;
+  }
+
+  /* Loading */
+  .loading { text-align: center; padding: 60px; font-size: 14px; color: var(--muted); }
+  .loading-dot { display: inline-block; width: 8px; height: 8px; background: var(--purple); border-radius: 50%; margin: 0 3px; animation: bounce 1s infinite; }
+  .loading-dot:nth-child(2){animation-delay:0.15s} .loading-dot:nth-child(3){animation-delay:0.3s}
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="wrap">
+  <div class="header">
+    <div style="display:flex;align-items:center">
+      <div class="logo">TIME TO <span>CARE</span></div>
+      <div class="badge">дашборд продаж</div>
+    </div>
+    <div class="controls">
+      <label>Неделя</label>
+      <select id="weekSel" onchange="render()"></select>
+      <label>Сравнить с</label>
+      <select id="compSel" onchange="render()">
+        <option value="-1">— нет —</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="status-bar" id="statusBar">Загружаю данные из таблицы...</div>
+  <div id="main"><div class="loading"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div></div>
+</div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbyhRBNVl0n6YBGDsgv5jsaD-8zI9d9BJG2URauQetze-TbxbqoSEE4pC-VwIhdWDI8Lsw/exec';
+const PCOLS = ['#a78bfa','#34d399','#60a5fa','#f472b6','#fbbf24','#fb923c'];
+const CNAMES = ['ВКонтакте','Telegram','Instagram','ОК','Без метки'];
+const CCOLS = ['#4e78c4','#26a5e4','#e1306c','#f58220','#8b8b9e'];
+const CICONS = ['VK','TG','IG','OK','—'];
+
+let DATA = [];
+let charts = {};
+
+// Stars
+const starsEl = document.getElementById('stars');
+for(let i=0;i<80;i++){
+  const s=document.createElement('div');
+  const sz=Math.random()*2.5+0.5;
+  const op=Math.random()*0.6+0.1;
+  s.className='star';
+  s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--op:${op};--d:${Math.random()*5+2}s;--del:${Math.random()*5}s`;
+  starsEl.appendChild(s);
+}
+
+function fmt(n){ return Number(n).toLocaleString('ru-RU'); }
+function pct(a,b){ return b ? Math.round(a/b*100) : 0; }
+function col(p){ return p>=90?'#4ade80':p>=50?'#fbbf24':'#f87171'; }
+function colClass(p){ return p>=90?'pos':p>=50?'warn':'neg'; }
+
+function drawGauge(id, val, max, color){
+  const c = document.getElementById(id);
+  if(!c) return;
+  if(charts[id]){ charts[id].destroy(); delete charts[id]; }
+  const p = Math.min(pct(val, max||1), 100);
+  charts[id] = new Chart(c, {
+    type: 'doughnut',
+    data: { datasets: [{ data:[p,100-p], backgroundColor:[color,'rgba(255,255,255,0.05)'], borderWidth:0, circumference:220, rotation:250 }] },
+    options: { responsive:true, maintainAspectRatio:false, cutout:'76%', plugins:{legend:{display:false},tooltip:{enabled:false}} }
+  });
+}
+
+function bottleSvg(p, color, idx){
+  const h = Math.round(Math.min(p,100)*0.5);
+  const id = 'bcl'+idx;
+  return `<svg width="56" height="76" viewBox="0 0 56 76" xmlns="http://www.w3.org/2000/svg">
+    <defs><clipPath id="${id}"><rect x="8" y="17" width="40" height="55" rx="8"/></clipPath></defs>
+    <rect x="19" y="2" width="18" height="9" rx="3" fill="rgba(255,255,255,0.12)"/>
+    <rect x="13" y="10" width="30" height="8" rx="3" fill="rgba(255,255,255,0.08)"/>
+    <rect x="8" y="17" width="40" height="55" rx="8" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+    <rect x="8" y="${72-h}" width="40" height="${h}" fill="${color}" opacity="0.7" clip-path="url(#${id})"/>
+    <rect x="8" y="${72-h}" width="40" height="4" fill="${color}" opacity="0.3" clip-path="url(#${id})"/>
+    <text x="28" y="48" text-anchor="middle" fill="white" font-size="13" font-weight="600" font-family="Unbounded,sans-serif">${p}%</text>
+  </svg>`;
+}
+
+async function loadData(){
+  try {
+    const r = await fetch(API_URL);
+    const json = await r.json();
+    DATA = json;
+    document.getElementById('statusBar').innerHTML = `Данные загружены <span>${new Date().toLocaleTimeString('ru-RU')}</span> · ${DATA.length} недел${DATA.length===1?'я':'и'}`;
+
+    const ws = document.getElementById('weekSel');
+    const cs = document.getElementById('compSel');
+    ws.innerHTML = '';
+    cs.innerHTML = '<option value="-1">— нет —</option>';
+    DATA.forEach((d,i)=>{
+      ws.innerHTML += `<option value="${i}">${d.week}</option>`;
+      cs.innerHTML += `<option value="${i}">${d.week}</option>`;
+    });
+    ws.value = DATA.length-1;
+    render();
+  } catch(e){
+    document.getElementById('statusBar').innerHTML = '⚠ Не удалось загрузить данные. Используются тестовые данные.';
+    DATA = [{
+      week:'01.06.2026',
+      products:[
+        {name:'Омега-3 120',plan_qty:20,plan_rub:35160,fact_qty:0,fact_rub:0},
+        {name:'Омега-3 220',plan_qty:25,plan_rub:54875,fact_qty:0,fact_rub:0},
+        {name:'Витамин D3',plan_qty:20,plan_rub:29000,fact_qty:0,fact_rub:0},
+        {name:'Магний цитрат',plan_qty:30,plan_rub:64050,fact_qty:0,fact_rub:0},
+        {name:'Метаб. средство',plan_qty:35,plan_rub:92505,fact_qty:0,fact_rub:0},
+        {name:'Индол',plan_qty:15,plan_rub:29520,fact_qty:0,fact_rub:0}
+      ],
+      channels:[0,0,0,0,0]
+    }];
+    const ws = document.getElementById('weekSel');
+    const cs = document.getElementById('compSel');
+    ws.innerHTML = `<option value="0">${DATA[0].week}</option>`;
+    render();
+  }
+}
+
+function render(){
+  const wi = parseInt(document.getElementById('weekSel').value);
+  const ci = parseInt(document.getElementById('compSel').value);
+  if(wi < 0 || wi >= DATA.length) return;
+  const w = DATA[wi];
+  const prev = ci>=0 && ci!==wi ? DATA[ci] : null;
+
+  const prods = w.products || [];
+  const channels = w.channels || [0,0,0,0,0];
+
+  const tPR = prods.reduce((a,p)=>a+(+p.plan_rub),0);
+  const tFR = prods.reduce((a,p)=>a+(+p.fact_rub),0);
+  const tPQ = prods.reduce((a,p)=>a+(+p.plan_qty),0);
+  const tFQ = prods.reduce((a,p)=>a+(+p.fact_qty),0);
+  const ep = pct(tFR,tPR);
+  const eq = pct(tFQ,tPQ);
+  const dev = tFR - tPR;
+  const tCH = channels.reduce((a,b)=>a+b,0)||1;
+
+  let h = '';
+
+  // KPI
+  h += `<div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">Выручка факт</div><div class="kpi-value">${fmt(tFR)} ₽</div><div class="kpi-sub">план: ${fmt(tPR)} ₽</div></div>
+    <div class="kpi"><div class="kpi-label">Выполнение плана</div><div class="kpi-value ${colClass(ep)}">${ep}%</div><div class="kpi-sub ${dev>=0?'pos':'neg'}">${dev>=0?'+':''}${fmt(dev)} ₽</div></div>
+    <div class="kpi"><div class="kpi-label">Продано штук</div><div class="kpi-value">${tFQ} шт</div><div class="kpi-sub">план: ${tPQ} шт · <span class="${tFQ-tPQ>=0?'pos':'neg'}">${tFQ-tPQ>=0?'+':''}${tFQ-tPQ}</span></div></div>
+    <div class="kpi"><div class="kpi-label">Средний чек</div><div class="kpi-value">${tFQ>0?fmt(Math.round(tFR/tFQ)):'—'} ₽</div><div class="kpi-sub">план: ${fmt(tPQ>0?Math.round(tPR/tPQ):0)} ₽</div></div>
+  </div>`;
+
+  // Speedos
+  h += `<div class="speedo-row">
+    <div class="speedo-card">
+      <div class="speedo-title">Спидометр — выручка</div>
+      <div class="speedo-wrap">
+        <canvas id="g1" role="img" aria-label="Спидометр выручки ${ep}%"></canvas>
+        <div class="speedo-center">
+          <div class="speedo-pct" style="color:${col(ep)}">${ep}%</div>
+          <div class="speedo-detail">${fmt(tFR)} / ${fmt(tPR)} ₽</div>
+        </div>
+      </div>
+    </div>
+    <div class="speedo-card">
+      <div class="speedo-title">Спидометр — штуки</div>
+      <div class="speedo-wrap">
+        <canvas id="g2" role="img" aria-label="Спидометр штук ${eq}%"></canvas>
+        <div class="speedo-center">
+          <div class="speedo-pct" style="color:${col(eq)}">${eq}%</div>
+          <div class="speedo-detail">${tFQ} / ${tPQ} шт</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  // Bottles
+  h += `<div class="section-title">Продукты Time to Care</div><div class="bottles-grid">`;
+  prods.forEach((p,i)=>{
+    const pp = pct(+p.fact_qty,+p.plan_qty);
+    const prevProd = prev ? prev.products[i] : null;
+    const prevPp = prevProd ? pct(+prevProd.fact_qty,+prevProd.plan_qty) : null;
+    const dif = prevPp!==null ? pp-prevPp : null;
+    h += `<div class="bottle" style="--fd:${3.5+i*0.4}s;--fdel:${i*0.25}s">
+      <div class="bottle-name" title="${p.name}">${p.name}</div>
+      ${bottleSvg(pp,PCOLS[i%PCOLS.length],i)}
+      <div class="bottle-pct" style="color:${col(pp)}">${pp}%</div>
+      <div class="bottle-stats"><span>${p.fact_qty}/${p.plan_qty} шт</span><span>${fmt(+p.fact_rub)} ₽</span></div>
+      ${dif!==null?`<div class="bottle-delta ${dif>=0?'pos':'neg'}">${dif>=0?'▲':'▼'} ${Math.abs(dif)}% к пред. неделе</div>`:'<div class="bottle-delta" style="color:var(--muted)">нет данных для сравнения</div>'}
+    </div>`;
+  });
+  h += `</div>`;
+
+  // Channels
+  h += `<div class="section-title">Источники трафика</div><div class="channels-grid">`;
+  CNAMES.forEach((c,i)=>{
+    const v = channels[i]||0;
+    const p2 = Math.round(v/tCH*100);
+    h += `<div class="ch-card"><div class="ch-icon" style="color:${CCOLS[i]}">${CICONS[i]}</div><div class="ch-name">${c}</div><div class="ch-val" style="color:${CCOLS[i]}">${v} шт</div><div class="ch-pct">${p2}%</div></div>`;
+  });
+  h += `</div>`;
+
+  // Bar chart
+  h += `<div class="chart-card">
+    <div class="section-title">Выручка план vs факт по продуктам</div>
+    <div style="position:relative;height:${prods.length*40+50}px">
+      <canvas id="bc" role="img" aria-label="Диаграмма выручки по продуктам"></canvas>
+    </div>
+  </div>`;
+
+  // Rec
+  const recText = ep===0
+    ? '💡 Данные пока нулевые — загрузи отчёт с Озон и заполни факт в листе «План продаж». Дашборд обновится автоматически при следующем открытии.'
+    : ep >= 90
+    ? `🎉 Отличная неделя! Выполнение ${ep}% — план почти выполнен. Посмотри какие продукты дали наибольший вклад и повтори стратегию.`
+    : ep >= 50
+    ? `⚡ Выполнение ${ep}% — есть куда расти. Посмотри на продукты с красными баночками и усиль продвижение по тем каналам которые дают больше всего заказов.`
+    : `🚨 Выполнение только ${ep}% — нужно срочно разобраться что тормозит. Проверь источники трафика и сфокусируйся на топовых продуктах.`;
+
+  h += `<div class="rec">${recText}</div>`;
+
+  document.getElementById('main').innerHTML = h;
+
+  setTimeout(()=>{
+    drawGauge('g1', tFR, tPR||1, col(ep));
+    drawGauge('g2', tFQ, tPQ||1, col(eq));
+    if(charts['bc']){ charts['bc'].destroy(); delete charts['bc']; }
+    const bc = document.getElementById('bc');
+    if(bc){
+      charts['bc'] = new Chart(bc, {
+        type: 'bar',
+        data: {
+          labels: prods.map(p=>p.name),
+          datasets: [
+            { label:'План', data: prods.map(p=>+p.plan_rub), backgroundColor:'rgba(255,255,255,0.08)', borderRadius:4 },
+            { label:'Факт', data: prods.map(p=>+p.fact_rub), backgroundColor: prods.map((_,i)=>PCOLS[i%PCOLS.length]), borderRadius:4 }
+          ]
+        },
+        options: {
+          responsive:true, maintainAspectRatio:false, indexAxis:'y',
+          plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: ctx=>` ${fmt(ctx.raw)} ₽` } } },
+          scales: {
+            x:{ ticks:{color:'rgba(255,255,255,0.3)',font:{size:10}}, grid:{color:'rgba(255,255,255,0.05)'} },
+            y:{ ticks:{color:'rgba(255,255,255,0.6)',font:{size:11},font:{family:'Inter'}}, grid:{display:false} }
+          }
+        }
+      });
+    }
+  }, 50);
+}
+
+loadData();
+</script>
+</body>
+</html>
