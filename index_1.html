@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time to Care — Дашборд продаж</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f5f0;--card:#fff;--border:#e8e2d8;
+  --green:#8db96a;--green2:#5a8a3a;--green3:#eef5e6;
+  --brown:#3d2314;--brown2:#6b3f28;--cream:#f0ece4;
+  --text:#3d2314;--muted:#9a8a7a;--muted2:#c8bdb0;
+  --red:#c0392b;--amber:#d4860a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 95% 5%,rgba(141,185,106,.07) 0%,transparent 45%),radial-gradient(ellipse at 5% 90%,rgba(141,185,106,.05) 0%,transparent 45%);pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;max-width:1260px;margin:0 auto;padding:18px}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px 22px;margin-bottom:16px;box-shadow:0 2px 10px rgba(61,35,20,.05)}
+.logo-area{display:flex;align-items:center;gap:12px}
+.logo-icon{width:42px;height:42px;background:var(--green3);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.logo-text .t1{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--brown);line-height:1.1}
+.logo-text .t2{font-size:10px;color:var(--green2);letter-spacing:3px;text-transform:uppercase}
+.logo-text .t3{font-size:10px;color:var(--muted);margin-top:1px}
+.hbadge{font-size:10px;background:var(--green3);border:1px solid rgba(141,185,106,.3);color:var(--green2);padding:2px 10px;border-radius:20px;margin-left:8px}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.controls label{font-size:11px;color:var(--muted)}
+.controls select{background:#fff;color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif}
+.status{text-align:center;font-size:11px;color:var(--muted);margin-bottom:14px}
+.status span{color:var(--green2);font-weight:500}
+
+/* CARDS */
+.card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(61,35,20,.04);animation:fadeUp .4s ease forwards;opacity:0;transition:box-shadow .2s}
+.card:hover{box-shadow:0 5px 20px rgba(61,35,20,.08)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.card:nth-child(1){animation-delay:.04s}.card:nth-child(2){animation-delay:.08s}.card:nth-child(3){animation-delay:.12s}.card:nth-child(4){animation-delay:.16s}.card:nth-child(5){animation-delay:.20s}.card:nth-child(6){animation-delay:.24s}
+.ctitle{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.ctitle::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* GRID */
+.row{display:grid;gap:12px;margin-bottom:14px}
+.row-4{grid-template-columns:repeat(4,1fr)}
+.row-3col{grid-template-columns:1.15fr 1fr 0.85fr}
+.row-2{grid-template-columns:1.4fr 1fr}
+
+/* KPI */
+.kpi-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:8px}
+.kpi-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.kpi-val{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:var(--brown)}
+.kpi-sub{font-size:11px;margin-top:3px;color:var(--muted)}
+.pos{color:#4a9a2a!important}.neg{color:var(--red)!important}.warn{color:var(--amber)!important}
+
+/* BIG PLAN */
+.big-pct-wrap{display:flex;align-items:baseline;gap:4px;margin:6px 0 2px}
+.big-pct{font-family:'Cormorant Garamond',serif;font-size:72px;font-weight:700;line-height:1}
+.big-pct-sign{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600}
+.big-week{font-size:11px;color:var(--muted);margin-bottom:10px}
+.big-progress{height:10px;background:var(--cream);border-radius:5px;margin:10px 0;overflow:hidden}
+.big-progress-fill{height:10px;border-radius:5px;transition:width .8s ease}
+.big-row{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--bg);border-radius:8px;margin-bottom:5px}
+.big-row-lbl{font-size:11px;color:var(--muted)}
+.big-row-val{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--brown)}
+
+/* SPEEDO */
+.speedo-wrap{position:relative;height:110px;max-width:220px;margin:0 auto}
+.speedo-center{position:absolute;bottom:0;left:0;right:0;text-align:center}
+.speedo-pct{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700}
+.speedo-detail{font-size:10px;color:var(--muted);margin-top:1px}
+
+/* RATING */
+.rating-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
+.rating-row:last-child{border-bottom:none}
+.rnum{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--muted2);width:20px;flex-shrink:0}
+.rnum.top{color:var(--green2)}
+.rname{font-size:11px;font-weight:500;color:var(--brown);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rbar-bg{flex:1;background:var(--cream);border-radius:3px;height:6px;overflow:hidden}
+.rbar{height:6px;border-radius:3px}
+.rval{font-family:'Cormorant Garamond',serif;font-size:13px;font-weight:600;color:var(--brown);min-width:72px;text-align:right;flex-shrink:0}
+
+/* BOTTLES */
+.bottles-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
+.btl{background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px 16px;box-shadow:0 2px 8px rgba(61,35,20,.04);position:relative;animation:float var(--fd) ease-in-out infinite var(--fdel);transition:box-shadow .2s}
+.btl:hover{box-shadow:0 8px 24px rgba(61,35,20,.1);animation-play-state:paused}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.btl-pct-badge{position:absolute;top:12px;right:12px;font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;padding:2px 8px;border-radius:8px}
+.btl-source-badge{position:absolute;top:12px;left:12px;font-size:9px;font-weight:600;padding:2px 6px;border-radius:5px;background:rgba(141,185,106,.15);color:var(--green2);border:1px solid rgba(141,185,106,.3)}
+.btl-svg{display:flex;justify-content:center;margin:6px 0}
+.btl-name{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--brown);text-align:center;margin:6px 0 10px;line-height:1.2}
+.btl-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.btl-cell{background:var(--bg);border-radius:8px;padding:7px 10px}
+.btl-clbl{font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.btl-cplan{font-size:10px;color:var(--muted)}
+.btl-cfact{font-size:13px;font-weight:500}
+.btl-bar-bg{background:var(--cream);border-radius:3px;height:5px;margin-top:10px;overflow:hidden}
+.btl-bar{height:5px;border-radius:3px;transition:width .7s ease}
+.btl-delta{font-size:10px;margin-top:6px;text-align:center}
+
+/* PLAN/FACT CHART CARDS */
+.pf-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+.pf-card{background:var(--bg);border-radius:10px;padding:10px 12px;border:1px solid var(--border)}
+.pf-name{font-size:11px;font-weight:500;color:var(--brown);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pf-bars{display:flex;gap:4px;align-items:flex-end;height:50px;margin-bottom:4px}
+.pf-bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1;gap:2px}
+.pf-bar-bg{width:100%;background:var(--cream);border-radius:3px 3px 0 0;flex:1;display:flex;align-items:flex-end;overflow:hidden}
+.pf-bar-fill{width:100%;border-radius:3px 3px 0 0;transition:height .7s ease}
+.pf-bar-lbl{font-size:9px;color:var(--muted)}
+.pf-pct{font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:700;text-align:center}
+
+/* MATRIX */
+.matrix-table{width:100%;border-collapse:collapse;font-size:11px}
+.matrix-table th{padding:6px 8px;text-align:center;font-weight:500;font-size:10px;color:var(--muted);border-bottom:1px solid var(--border);background:var(--bg)}
+.matrix-table th:first-child{text-align:left}
+.matrix-table td{padding:5px 8px;text-align:center;border-bottom:1px solid var(--border)}
+.matrix-table td:first-child{text-align:left}
+.matrix-table tr:last-child td{border-bottom:none;font-weight:600;background:var(--bg)}
+.pl-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;display:inline-block}
+.mc{font-size:11px;font-weight:500;padding:2px 5px;border-radius:4px;display:inline-block}
+
+/* REC */
+.rec{background:var(--green3);border:1px solid rgba(141,185,106,.25);border-radius:12px;padding:12px 18px;font-size:12px;color:var(--green2);line-height:1.7;margin-top:14px}
+
+.loading{text-align:center;padding:60px;color:var(--muted);font-family:'Cormorant Garamond',serif;font-size:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="header">
+  <div class="logo-area">
+    <div class="logo-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M12 3C9 7 7 10 9 14C11 18 12 20 12 22" stroke="#8db96a" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+        <path d="M12 8C15 5 19 7 17 11C15 14 12 13 12 13" fill="rgba(141,185,106,0.4)" stroke="#8db96a" stroke-width="1"/>
+        <path d="M12 12C9 9 5 11 7 15C9 18 12 17 12 17" fill="rgba(141,185,106,0.25)" stroke="#8db96a" stroke-width="1"/>
+      </svg>
+    </div>
+    <div class="logo-text">
+      <div class="t1">time</div>
+      <div class="t2">to care</div>
+      <div class="t3">Витамины. Добавки. Схемы</div>
+    </div>
+    <div class="hbadge">дашборд продаж</div>
+  </div>
+  <div class="controls">
+    <label>Неделя</label>
+    <select id="weekSel" onchange="render()"></select>
+    <label>Сравнить с</label>
+    <select id="compSel" onchange="render()"><option value="-1">— нет —</option></select>
+  </div>
+</div>
+
+<div class="status" id="statusBar">Загружаю данные из таблицы...</div>
+<div id="main"><div class="loading">Загрузка данных...</div></div>
+</div>
+
+<script>
+const API='https://script.google.com/macros/s/AKfycbyhRBNVl0n6YBGDsgv5jsaD-8zI9d9BJG2URauQetze-TbxbqoSEE4pC-VwIhdWDI8Lsw/exec';
+const PCOLS=['#8db96a','#6b3f28','#a8c87a','#c4956a','#4a7a35','#8b5e3c'];
+
+const PLATFORMS=[
+  {key:'vk',name:'VK',color:'#4e78c4',bg:'rgba(78,120,196,.12)'},
+  {key:'instagram',name:'Instagram',color:'#e1306c',bg:'rgba(225,48,108,.1)'},
+  {key:'telegram',name:'Telegram',color:'#26a5e4',bg:'rgba(38,165,228,.1)'},
+  {key:'max',name:'MAX',color:'#ff6b35',bg:'rgba(255,107,53,.1)'},
+  {key:'ok',name:'ОК',color:'#f58220',bg:'rgba(245,130,32,.1)'},
+  {key:'youtube',name:'YouTube',color:'#ff0000',bg:'rgba(255,0,0,.08)'},
+  {key:'rutube',name:'RuTube',color:'#1a6aff',bg:'rgba(26,106,255,.08)'},
+  {key:'tiktok',name:'TikTok',color:'#555',bg:'rgba(0,0,0,.06)'},
+  {key:'threads',name:'Threads',color:'#333',bg:'rgba(0,0,0,.05)'},
+];
+const PROJECTS=[
+  {key:'ttc',name:'ТТС',full:'Time to Care',color:'#8db96a'},
+  {key:'sz',name:'СЗ',full:'Сем. здоровье',color:'#6b9fd4'},
+  {key:'np',name:'НП',full:'Нед. поддержки',color:'#d4a56b'},
+  {key:'lm',name:'ЛМ',full:'Лид магнит',color:'#b96ab9'},
+  {key:'none',name:'—',full:'Без метки',color:'#aaa'},
+];
+
+let DATA=[],charts={};
+function fmt(n){return Number(n).toLocaleString('ru-RU')}
+function pct(a,b){return b?Math.round(a/b*100):0}
+function col(p){return p>=90?'#4a9a2a':p>=50?'#d4860a':'#c0392b'}
+function colClass(p){return p>=90?'pos':p>=50?'warn':'neg'}
+function bg(p){return p>=90?'rgba(74,154,42,.1)':p>=50?'rgba(212,134,10,.1)':'rgba(192,57,43,.1)'}
+
+function normPlatform(str){
+  const s=(str||'').toLowerCase().trim();
+  if(s.includes('vk')||s.includes('вк')||s.includes('вконтакте'))return 'vk';
+  if(s.includes('inst')||s.includes('инст'))return 'instagram';
+  if(s.includes('tg')||s.includes('telegram')||s.includes('телег'))return 'telegram';
+  if(s.includes('max')||s.includes('макс'))return 'max';
+  if(s.includes('ok')||s.includes('одно'))return 'ok';
+  if(s.includes('youtube')||s.includes('ютуб'))return 'youtube';
+  if(s.includes('rutube')||s.includes('рутуб'))return 'rutube';
+  if(s.includes('tiktok')||s.includes('тикток'))return 'tiktok';
+  if(s.includes('threads'))return 'threads';
+  return 'none';
+}
+function normProject(str){
+  const s=(str||'').toLowerCase().trim();
+  if(s.includes('ттс')||s.includes('ttc')||s.includes('time'))return 'ttc';
+  if(s.includes('сз')||s.includes('sz')||s.includes('семей'))return 'sz';
+  if(s.includes('нп')||s.includes('np')||s.includes('недел'))return 'np';
+  if(s.includes('лм')||s.includes('lm')||s.includes('лид'))return 'lm';
+  return 'none';
+}
+
+// Best source per product from traffic array
+function bestSource(trafficArr, productName){
+  if(!trafficArr||!trafficArr.length)return null;
+  const filtered=trafficArr.filter(t=>t.product&&productName&&t.product.toLowerCase().includes(productName.toLowerCase().split(' ')[0].toLowerCase()));
+  if(!filtered.length)return null;
+  let best=null,bestSold=0;
+  filtered.forEach(t=>{
+    const sold=+(t.sold||t.orders||0);
+    if(sold>bestSold){bestSold=sold;best=t;}
+  });
+  if(!best||bestSold===0)return null;
+  const pl=PLATFORMS.find(p=>p.key===normPlatform(best.platform));
+  const pr=PROJECTS.find(p=>p.key===normProject(best.project));
+  return {platform:pl?pl.name:best.platform,project:pr?pr.name:best.project,color:pl?pl.color:'#8db96a',sold:bestSold};
+}
+
+function bottleSvg(p,color,idx){
+  const isDark=idx===0||idx===1;
+  const fillH=Math.round(Math.min(p,100)*.44);
+  const id='bf'+idx;
+  if(isDark){
+    return`<svg width="68" height="80" viewBox="0 0 68 80" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <clipPath id="${id}"><rect x="8" y="22" width="52" height="54" rx="8"/></clipPath>
+        <linearGradient id="gd${idx}" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#b8932a"/><stop offset="40%" stop-color="#e8c45a"/><stop offset="100%" stop-color="#b8932a"/></linearGradient>
+        <linearGradient id="gl${idx}" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#2a1a10"/><stop offset="35%" stop-color="#4a2e18"/><stop offset="100%" stop-color="#2a1a10"/></linearGradient>
+      </defs>
+      <rect x="13" y="3" width="42" height="13" rx="5" fill="url(#gd${idx})"/>
+      <rect x="15" y="15" width="38" height="8" rx="3" fill="url(#gd${idx})" opacity=".8"/>
+      <rect x="8" y="22" width="52" height="54" rx="8" fill="url(#gl${idx})" stroke="#1a0e08" stroke-width=".5"/>
+      <rect x="8" y="${76-fillH}" width="52" height="${fillH}" fill="${color}" opacity=".3" clip-path="url(#${id})"/>
+      <rect x="14" y="27" width="8" height="32" rx="4" fill="rgba(255,255,255,.06)"/>
+      <rect x="10" y="33" width="48" height="30" rx="5" fill="rgba(232,224,210,.9)" stroke="rgba(141,185,106,.3)" stroke-width=".5"/>
+      <text x="34" y="51" text-anchor="middle" fill="#3d2314" font-size="8" font-weight="600" font-family="Inter">${p}%</text>
+      <text x="34" y="59" text-anchor="middle" fill="#8db96a" font-size="5.5" font-family="Inter">time to care</text>
+    </svg>`;
+  }else{
+    return`<svg width="68" height="80" viewBox="0 0 68 80" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <clipPath id="${id}"><rect x="8" y="20" width="52" height="56" rx="10"/></clipPath>
+        <linearGradient id="gp${idx}" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#d0ccc4"/><stop offset="35%" stop-color="#f2eee8"/><stop offset="100%" stop-color="#d0ccc4"/></linearGradient>
+        <linearGradient id="gc${idx}" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#c0bdb5"/><stop offset="50%" stop-color="#e8e4de"/><stop offset="100%" stop-color="#c0bdb5"/></linearGradient>
+      </defs>
+      <rect x="11" y="2" width="46" height="15" rx="7" fill="url(#gc${idx})"/>
+      ${[17,24,31,38,45,52].map(x=>`<line x1="${x}" y1="4" x2="${x}" y2="15" stroke="rgba(0,0,0,.06)" stroke-width="1.5"/>`).join('')}
+      <rect x="13" y="16" width="42" height="5" rx="2.5" fill="url(#gc${idx})"/>
+      <rect x="8" y="20" width="52" height="56" rx="10" fill="url(#gp${idx})" stroke="#bab6ae" stroke-width=".5"/>
+      <rect x="8" y="${76-fillH}" width="52" height="${fillH}" fill="${color}" opacity=".18" clip-path="url(#${id})"/>
+      <rect x="14" y="25" width="8" height="32" rx="4" fill="rgba(255,255,255,.55)"/>
+      <rect x="10" y="32" width="48" height="32" rx="5" fill="rgba(240,236,228,.93)" stroke="rgba(141,185,106,.3)" stroke-width=".5"/>
+      <text x="34" y="51" text-anchor="middle" fill="#3d2314" font-size="8" font-weight="600" font-family="Inter">${p}%</text>
+      <text x="34" y="59" text-anchor="middle" fill="#8db96a" font-size="5.5" font-family="Inter">time to care</text>
+    </svg>`;
+  }
+}
+
+function drawGauge(id,val,max,color){
+  const c=document.getElementById(id);if(!c)return;
+  if(charts[id]){charts[id].destroy();delete charts[id];}
+  const p=Math.min(pct(val,max||1),100);
+  charts[id]=new Chart(c,{type:'doughnut',data:{datasets:[{data:[p,100-p],backgroundColor:[color,'rgba(61,35,20,.06)'],borderWidth:0,circumference:220,rotation:250}]},options:{responsive:true,maintainAspectRatio:false,cutout:'76%',plugins:{legend:{display:false},tooltip:{enabled:false}}}});
+}
+
+async function loadData(){
+  try{
+    const r=await fetch(API);const json=await r.json();DATA=json;
+    document.getElementById('statusBar').innerHTML=`Данные обновлены <span>${new Date().toLocaleTimeString('ru-RU')}</span> · ${DATA.length} недел${DATA.length===1?'я':'и'}`;
+    const ws=document.getElementById('weekSel'),cs=document.getElementById('compSel');
+    ws.innerHTML='';cs.innerHTML='<option value="-1">— нет —</option>';
+    DATA.forEach((d,i)=>{ws.innerHTML+=`<option value="${i}">${d.week}</option>`;cs.innerHTML+=`<option value="${i}">${d.week}</option>`;});
+    ws.value=DATA.length-1;render();
+  }catch(e){
+    document.getElementById('statusBar').innerHTML='⚠ Тестовые данные';
+    DATA=[{week:'01.06.2026',
+      products:[
+        {name:'Омега-3 120',plan_qty:20,plan_rub:35160,fact_qty:14,fact_rub:24612},
+        {name:'Омега-3 220',plan_qty:25,plan_rub:54875,fact_qty:18,fact_rub:39510},
+        {name:'Витамин D3',plan_qty:20,plan_rub:29000,fact_qty:5,fact_rub:7250},
+        {name:'Магний цитрат',plan_qty:30,plan_rub:64050,fact_qty:22,fact_rub:46970},
+        {name:'Метаб. средство',plan_qty:35,plan_rub:92505,fact_qty:8,fact_rub:21160},
+        {name:'Индол',plan_qty:15,plan_rub:29520,fact_qty:12,fact_rub:23616}
+      ],
+      traffic:[
+        {platform:'VK',project:'ТТС',product:'Омега-3 120',clicks:120,orders:8,sold:8},
+        {platform:'VK',project:'НП',product:'Омега-3 120',clicks:80,orders:6,sold:6},
+        {platform:'Instagram',project:'ТТС',product:'Омега-3 220',clicks:200,orders:14,sold:14},
+        {platform:'Telegram',project:'СЗ',product:'Магний цитрат',clicks:150,orders:18,sold:18},
+        {platform:'VK',project:'ТТС',product:'Витамин D3',clicks:60,orders:4,sold:4},
+        {platform:'Instagram',project:'СЗ',product:'Индол',clicks:90,orders:10,sold:10},
+        {platform:'Telegram',project:'ТТС',product:'Метаб. средство',clicks:70,orders:6,sold:6},
+      ]
+    }];
+    document.getElementById('weekSel').innerHTML=`<option value="0">${DATA[0].week}</option>`;
+    render();
+  }
+}
+
+function render(){
+  const wi=parseInt(document.getElementById('weekSel').value);
+  const ci=parseInt(document.getElementById('compSel').value);
+  if(wi<0||wi>=DATA.length)return;
+  const w=DATA[wi];const prev=ci>=0&&ci!==wi?DATA[ci]:null;
+  const prods=w.products||[];const trafficArr=w.traffic||[];
+
+  const tPR=prods.reduce((a,p)=>a+(+p.plan_rub),0);
+  const tFR=prods.reduce((a,p)=>a+(+p.fact_rub),0);
+  const tPQ=prods.reduce((a,p)=>a+(+p.plan_qty),0);
+  const tFQ=prods.reduce((a,p)=>a+(+p.fact_qty),0);
+  const ep=pct(tFR,tPR);const eq=pct(tFQ,tPQ);const dev=tFR-tPR;
+
+  // traffic matrix
+  const matrix={};
+  PLATFORMS.forEach(pl=>{matrix[pl.key]={};PROJECTS.forEach(pr=>{matrix[pl.key][pr.key]=0;});});
+  trafficArr.forEach(t=>{
+    const plk=normPlatform(t.platform);const prk=normProject(t.project);
+    const sold=+(t.sold||t.orders||0);
+    if(matrix[plk])matrix[plk][prk]=(matrix[plk][prk]||0)+sold;
+  });
+  const activePl=PLATFORMS.filter(pl=>PROJECTS.some(pr=>matrix[pl.key][pr.key]>0));
+  const displayPl=activePl.length?activePl:PLATFORMS.slice(0,5);
+
+  let h='';
+
+  // ROW 1: KPI x4
+  h+=`<div class="row row-4">
+    <div class="card"><div class="kpi-icon" style="background:var(--green3)">💰</div><div class="kpi-lbl">Выручка факт</div><div class="kpi-val">${fmt(tFR)} ₽</div><div class="kpi-sub">план: ${fmt(tPR)} ₽</div></div>
+    <div class="card"><div class="kpi-icon" style="background:${bg(ep)}">📊</div><div class="kpi-lbl">Выполнение</div><div class="kpi-val ${colClass(ep)}">${ep}%</div><div class="kpi-sub ${dev>=0?'pos':'neg'}">${dev>=0?'+':''}${fmt(dev)} ₽</div></div>
+    <div class="card"><div class="kpi-icon" style="background:rgba(61,35,20,.05)">📦</div><div class="kpi-lbl">Продано штук</div><div class="kpi-val">${tFQ} шт</div><div class="kpi-sub">план: ${tPQ} · <span class="${tFQ-tPQ>=0?'pos':'neg'}">${tFQ-tPQ>=0?'+':''}${tFQ-tPQ}</span></div></div>
+    <div class="card"><div class="kpi-icon" style="background:var(--green3)">🧾</div><div class="kpi-lbl">Средний чек</div><div class="kpi-val">${tFQ>0?fmt(Math.round(tFR/tFQ)):'—'} ₽</div><div class="kpi-sub">план: ${fmt(tPQ>0?Math.round(tPR/tPQ):0)} ₽</div></div>
+  </div>`;
+
+  // ROW 2: Big plan + Speedos + Rating
+  const sorted=[...prods].map((p,i)=>({...p,i})).sort((a,b)=>(+b.fact_rub)-(+a.fact_rub));
+  const maxRub=(+sorted[0]?.fact_rub)||1;
+
+  h+=`<div class="row row-3col">`;
+
+  // Big plan
+  h+=`<div class="card">
+    <div class="ctitle">Выполнение плана продаж</div>
+    <div class="big-pct-wrap"><div class="big-pct" style="color:${col(ep)}">${ep}</div><div class="big-pct-sign" style="color:${col(ep)}">%</div></div>
+    <div class="big-week">неделя ${w.week}</div>
+    <div class="big-progress"><div class="big-progress-fill" style="width:${Math.min(ep,100)}%;background:${col(ep)}"></div></div>
+    <div class="big-row"><div class="big-row-lbl">План, руб</div><div class="big-row-val">${fmt(tPR)} ₽</div></div>
+    <div class="big-row"><div class="big-row-lbl">Факт, руб</div><div class="big-row-val ${colClass(ep)}">${fmt(tFR)} ₽</div></div>
+    <div class="big-row"><div class="big-row-lbl">Отклонение</div><div class="big-row-val ${dev>=0?'pos':'neg'}">${dev>=0?'+':''}${fmt(dev)} ₽</div></div>
+    <div class="big-row"><div class="big-row-lbl">Выполнение, шт</div><div class="big-row-val ${colClass(eq)}">${tFQ} / ${tPQ} шт (${eq}%)</div></div>
+  </div>`;
+
+  // Speedos
+  h+=`<div class="card">
+    <div class="ctitle">Спидометры</div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px">Выручка</div>
+      <div class="speedo-wrap"><canvas id="g1" role="img" aria-label="Спидометр выручки"></canvas>
+        <div class="speedo-center"><div class="speedo-pct" style="color:${col(ep)}">${ep}%</div><div class="speedo-detail">${fmt(tFR)} / ${fmt(tPR)} ₽</div></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px">Штуки</div>
+      <div class="speedo-wrap"><canvas id="g2" role="img" aria-label="Спидометр штук"></canvas>
+        <div class="speedo-center"><div class="speedo-pct" style="color:${col(eq)}">${eq}%</div><div class="speedo-detail">${tFQ} / ${tPQ} шт</div></div>
+      </div>
+    </div>
+  </div>`;
+
+  // Rating
+  h+=`<div class="card"><div class="ctitle">Рейтинг продуктов</div>`;
+  sorted.forEach((p,rank)=>{
+    const pp=pct(+p.fact_rub,maxRub);
+    h+=`<div class="rating-row">
+      <div class="rnum ${rank<3?'top':''}">${rank+1}</div>
+      <div style="flex:1;min-width:0">
+        <div class="rname">${p.name}</div>
+        <div class="rbar-bg" style="margin-top:3px"><div class="rbar" style="width:${pp}%;background:${PCOLS[p.i%PCOLS.length]}"></div></div>
+      </div>
+      <div class="rval">${fmt(+p.fact_rub)} ₽</div>
+    </div>`;
+  });
+  h+=`</div></div>`; // end row2
+
+  // ROW 3: Bottles
+  h+=`<div style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--brown);margin-bottom:10px;display:flex;align-items:center;gap:8px">Продукты Time to Care <span style="flex:1;height:1px;background:var(--border);display:inline-block"></span></div>`;
+  h+=`<div class="bottles-grid">`;
+  prods.forEach((p,i)=>{
+    const pp=pct(+p.fact_qty,+p.plan_qty);
+    const c=col(pp);
+    const prevProd=prev?prev.products[i]:null;
+    const dif=prevProd?pp-pct(+prevProd.fact_qty,+prevProd.plan_qty):null;
+    const src=bestSource(trafficArr,p.name);
+    h+=`<div class="btl" style="--fd:${3.5+i*.4}s;--fdel:${i*.2}s">
+      ${src?`<div class="btl-source-badge" style="background:rgba(${src.color==='#4e78c4'?'78,120,196':src.color==='#26a5e4'?'38,165,228':src.color==='#e1306c'?'225,48,108':'141,185,106'},.12);color:${src.color};border-color:${src.color}40">🏆 ${src.platform} · ${src.project}</div>`:''}
+      <div class="btl-pct-badge" style="background:${bg(pp)};color:${c}">${pp}%</div>
+      <div class="btl-svg" style="margin-top:${src?'28px':'10px'}">${bottleSvg(pp,PCOLS[i%PCOLS.length],i)}</div>
+      <div class="btl-name">${p.name}</div>
+      <div class="btl-grid">
+        <div class="btl-cell"><div class="btl-clbl">Штуки</div><div class="btl-cplan">план ${p.plan_qty} шт</div><div class="btl-cfact" style="color:${c}">${p.fact_qty} шт</div></div>
+        <div class="btl-cell"><div class="btl-clbl">Выручка</div><div class="btl-cplan">${fmt(+p.plan_rub)} ₽</div><div class="btl-cfact" style="color:${c}">${fmt(+p.fact_rub)} ₽</div></div>
+      </div>
+      <div class="btl-bar-bg"><div class="btl-bar" style="width:${Math.min(pp,100)}%;background:${c}"></div></div>
+      ${dif!==null?`<div class="btl-delta ${dif>=0?'pos':'neg'}">${dif>=0?'▲':'▼'} ${Math.abs(dif)}% к прошлой неделе</div>`:`<div class="btl-delta" style="color:var(--muted2)">выбери неделю для сравнения</div>`}
+    </div>`;
+  });
+  h+=`</div>`;
+
+  // ROW 4: Plan/fact cards + Matrix
+  h+=`<div class="row row-2">`;
+
+  // Plan/fact mini cards
+  h+=`<div class="card">
+    <div class="ctitle">План / факт в разрезе продукта</div>
+    <div class="pf-grid">`;
+  prods.forEach((p,i)=>{
+    const fp=pct(+p.fact_qty,+p.plan_qty);
+    const maxV=+p.plan_qty||1;
+    const planH=Math.round(100);
+    const factH=Math.round((+p.fact_qty/maxV)*100);
+    h+=`<div class="pf-card">
+      <div class="pf-name" title="${p.name}">${p.name}</div>
+      <div class="pf-bars">
+        <div class="pf-bar-wrap">
+          <div class="pf-bar-bg"><div class="pf-bar-fill" style="height:${planH}%;background:rgba(141,185,106,.3)"></div></div>
+          <div class="pf-bar-lbl">план</div>
+          <div style="font-size:10px;font-weight:600;color:var(--muted);text-align:center">${p.plan_qty}</div>
+        </div>
+        <div class="pf-bar-wrap">
+          <div class="pf-bar-bg"><div class="pf-bar-fill" style="height:${factH}%;background:${col(fp)}"></div></div>
+          <div class="pf-bar-lbl">факт</div>
+          <div style="font-size:10px;font-weight:600;color:${col(fp)};text-align:center">${p.fact_qty}</div>
+        </div>
+      </div>
+      <div class="pf-pct" style="color:${col(fp)}">${fp}% <span style="font-size:10px;font-weight:400;color:var(--muted)">(шт)</span></div>
+    </div>`;
+  });
+  h+=`</div></div>`;
+
+  // Matrix
+  h+=`<div class="card">
+    <div class="ctitle">Трафик: платформа × проект (продаж)</div>
+    <table class="matrix-table"><thead><tr>
+      <th>Платформа</th>
+      ${PROJECTS.map(pr=>`<th><span style="color:${pr.color};font-weight:600">${pr.name}</span><br><span style="font-size:9px;color:var(--muted)">${pr.full}</span></th>`).join('')}
+      <th>Итого</th>
+    </tr></thead><tbody>`;
+
+  let colTotals={};PROJECTS.forEach(pr=>{colTotals[pr.key]=0;});
+  displayPl.forEach(pl=>{
+    const rowTotal=PROJECTS.reduce((a,pr)=>a+(matrix[pl.key][pr.key]||0),0);
+    PROJECTS.forEach(pr=>{colTotals[pr.key]=(colTotals[pr.key]||0)+(matrix[pl.key][pr.key]||0);});
+    h+=`<tr><td><span class="pl-badge" style="background:${pl.bg};color:${pl.color}">${pl.name}</span></td>
+      ${PROJECTS.map(pr=>{const v=matrix[pl.key][pr.key]||0;return`<td>${v>0?`<span class="mc" style="background:${pl.bg};color:${pl.color}">${v}</span>`:'<span style="color:var(--muted2)">—</span>'}</td>`;}).join('')}
+      <td><strong>${rowTotal||'—'}</strong></td></tr>`;
+  });
+  const grand=Object.values(colTotals).reduce((a,b)=>a+b,0);
+  h+=`<tr><td><strong>Итого</strong></td>${PROJECTS.map(pr=>`<td><strong>${colTotals[pr.key]||'—'}</strong></td>`).join('')}<td><strong>${grand||'—'}</strong></td></tr>`;
+  h+=`</tbody></table></div></div>`;
+
+  // Rec
+  const recText=ep===0?'💡 Данные пока нулевые — загрузи отчёт с Озон и заполни факт в листе «План продаж».'
+    :ep>=90?`🌿 Отличная неделя! ${ep}% — план почти выполнен. Посмотри топ в рейтинге и повтори стратегию.`
+    :ep>=50?`⚡ Выполнение ${ep}% — есть куда расти. Посмотри матрицу трафика — какой проект × платформа даёт больше всего продаж.`
+    :`🔔 Выполнение только ${ep}% — разберись что тормозит. Сфокусируйся на топ-продуктах из рейтинга.`;
+  h+=`<div class="rec">${recText}</div>`;
+
+  document.getElementById('main').innerHTML=h;
+  setTimeout(()=>{
+    drawGauge('g1',tFR,tPR||1,col(ep));
+    drawGauge('g2',tFQ,tPQ||1,col(eq));
+  },50);
+}
+
+loadData();
+</script>
+</body>
+</html>
